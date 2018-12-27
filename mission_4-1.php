@@ -1,6 +1,7 @@
 <?php
 
 header('Content-Type: text/html; charset=UTF-8');
+
 // DB接続
 $dsn = 'データベース名';
 $user = 'ユーザー名';
@@ -26,34 +27,28 @@ if(!empty($_POST['name']) && !empty($_POST['comment']) && !empty($_POST['pass'])
 	$comment = $_POST['comment'];
 	$time = date("Y-m-d/ H:i:s");
 	$passward = $_POST['pass'];
-
+	
 	// insert
 	$sql = "INSERT INTO formdata(id,name,comment,time,passward) VALUES (0,'$name','$comment','$time','$passward')"; // オートインクリメントで自動的に数字振ってる(DBが)
 	$pdo -> query($sql);
-
 }else if(!empty($_POST['name']) && !empty($_POST['comment']) && empty($_POST['pass']) && empty($_POST['hide'])){
 	echo "パスワードを入力してください";
-
 }else if(empty($_POST['name']) && !empty($_POST['comment']) && empty($_POST['pass']) && empty($_POST['hide'])){
 	echo "名前を入力してください";
-
 }else if(!empty($_POST['name']) && empty($_POST['comment']) && empty($_POST['pass']) && empty($_POST['hide'])){
 	echo "コメントをを入力してください";
 }
 
 // 削除機能
 if(ctype_digit($_POST['delete']) && !empty($_POST['deletepass'])){
-
 	// selectする際、投稿された番号をと一致するカラムを指定するために変数にしておく
 	$deleteId = $_POST['delete'];
-
 	// 投稿された番号と一致するidとpasswardを取得
 	$sql = "SELECT id,passward FROM formdata where id ="
 	. "$deleteId"
 	. ";";
 	$stmt = $pdo -> query($sql);
 	$arraydelete = $stmt -> fetch();
-
 	if($_POST['deletepass'] == $arraydelete[passward]){
 		$passdel = "DELETE FROM formdata where id ="
 		."$deleteId"
@@ -62,7 +57,6 @@ if(ctype_digit($_POST['delete']) && !empty($_POST['deletepass'])){
 	
 	}else{
 		echo "パスワードが違います";
-
 	}
 }
 else if(ctype_digit($_POST['delete']) && empty($_POST['deletepass'])){
@@ -71,7 +65,6 @@ else if(ctype_digit($_POST['delete']) && empty($_POST['deletepass'])){
 
 // 編集用にhiddenフォームに番号を送信するための準備をする条件分岐
 if(ctype_digit($_POST['edit']) && !empty($_POST['editpass'])){
-
 	// 編集したい番号と一致するカラムを取得したい
 	$postId = $_POST['edit'];
 	$sql = "SELECT * FROM formdata where id ="
@@ -79,7 +72,6 @@ if(ctype_digit($_POST['edit']) && !empty($_POST['editpass'])){
 	.";";
 	$test = $pdo -> query($sql);
 	$arraypass = $test -> fetch();
-
 	// idとpasswardが一致したら内容を変数にして、value値で表示するようにする
 	if($_POST['edit'] == $arraypass[id] && $_POST['editpass'] == $arraypass[passward]){
 		$editowe = $arraypass[id];
@@ -89,31 +81,26 @@ if(ctype_digit($_POST['edit']) && !empty($_POST['editpass'])){
 	}else if($_POST['editpass'] != $arraypass[passward]){
 		echo "パスワードが違います";
 	}
-
 }else if(!empty($_POST['edit']) && empty($_POST['editpass'])){
 	echo "パスワードを入力してください";
 }
 
 // 編集機能
 if(!empty($_POST['name']) && !empty($_POST['comment']) && !empty($_POST['hide']) && !empty($_POST['pass'])){
-
 	// フォームに入っている数字とidを比較したい。→変数にしておく
 	$editId = $_POST['hide'];
-
 	$sql = "SELECT * FROM formdata where id ="
 	."$editId"
 	.";";
 	$test = $pdo -> query($sql);
 	$hidepass = $test -> fetch();
 	
-
 	if(!empty($_POST['pass']) == $hidepass[passward]){
 		
 		// 変数に格納
 		$newname = $_POST['name'];
 		$newcomment = $_POST['comment'];
 		$time = date("Y-m-d/ H:i:s");
-
 		// hiddenフォームとidが一致したら…一致したカラムの内容を編集
 		$sql = "update formdata set name='$newname' , comment='$newcomment' , time='$time' where id ="
 		."$editId"
@@ -123,12 +110,28 @@ if(!empty($_POST['name']) && !empty($_POST['comment']) && !empty($_POST['hide'])
 	}else if(!empty($_POST['pass']) != $hidepass[passward]){
 		echo "パスワードが違います";
 	}
-
 }else if(!empty($_POST['name']) && !empty($_POST['comment']) && !empty($_POST['hide']) && empty($_POST['pass'])){
 		echo "パスワードを入力してください";
 	}
-
+	
+// 追加：簡単な方法(らしい)画像投稿機能
+	
+// もし、HTTP POST方式で送信されたファイルなら(安全な方法？)
+if (is_uploaded_file($_FILES["upfile"]["tmp_name"])) {
+    
+    // tmpファイルという一時保存の場所から移動させる
+	if (move_uploaded_file ($_FILES["upfile"]["tmp_name"], "files/" .date("Ymd-His") . $_FILES["upfile"]["name"])) {
+	chmod("files/" . date("Ymd-His") . $_FILES["upfile"]["name"], 0644);
+	echo $_FILES["upfile"]["name"] . "をアップロードしました。";
+} else {
+	echo "ファイルをアップロードできません。";
+}
+} else {
+	echo "ファイルが選択されていません。";
+}
 ?>
+
+    
 
 <!DOCTYPE html>
 <html lang="ja">
@@ -137,7 +140,11 @@ if(!empty($_POST['name']) && !empty($_POST['comment']) && !empty($_POST['hide'])
 <title>mission4</title>
 </head>
 <body>
-	<form method="post" action="">
+    
+    <!-- multipart/form-data形式でPOST -->
+
+    <!-- MINE Typeという形式の一つ。 フロントとバックエンドのやりとりで使う。どんなデータを扱ってるのか指定するためのもの -->
+	<form method="post" action="" enctype="multipart/form-data">
 	<!-- toukou -->
 		<input type="text" name="name" placeholder="名前"  value="<?=$edittwo?>"><br>
 		<input type="text" name="comment" placeholder="コメント" value="<?=$editthree?>">
@@ -154,6 +161,10 @@ if(!empty($_POST['name']) && !empty($_POST['comment']) && !empty($_POST['hide'])
 		<input type="text" name="edit" placeholder="編集対象番号"><br>
 		<input type="passward" name="editpass" placeholder="編集したい番号のpassward">
 		<input type="submit" value="編集">
+	<!-- upload -->
+	<!-- label forはフォームの左側に表示されるもの。紐づけ -->
+	    <label for="upload">画像のアップロード</label>
+	    <input type="file" name="upfile" size="30" id="upload">
 	</form>
 <body>
 </html>
